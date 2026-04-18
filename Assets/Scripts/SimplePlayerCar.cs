@@ -63,7 +63,7 @@ public class SimplePlayerCar : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         rb.interpolation = RigidbodyInterpolation.Interpolate;
-        rb.centerOfMass = new Vector3(0, -0.3f, 0);
+        rb.centerOfMass = new Vector3(0, 0.3f, 0);
 
         wheels.Clear();
         
