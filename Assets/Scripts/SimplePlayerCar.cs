@@ -1,45 +1,83 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
+
+[System.Serializable]
+public class WheelInfo
+{
+    public WheelCollider collider;
+    public Transform visualMesh;
+    public bool isSteering;
+    public bool isMotor;
+}
 
 [RequireComponent(typeof(Rigidbody))]
 public class SimplePlayerCar : MonoBehaviour
 {
-    [Header("Movement Settings")]
-    public float moveSpeed = 20f;
-    public float turnSpeed = 100f;
-    
-    [Header("Visual Wheels (Optional)")]
-    public Transform frontLeftWheel;
-    public Transform frontRightWheel;
-    public float maxVisualSteerAngle = 30f;
+    public List<WheelInfo> wheels = new List<WheelInfo>();
+    public float motorTorque = 1500f;
+    public float maxSteerAngle = 35f;
+    public float brakeTorque = 5000f;
 
     private Rigidbody rb;
     private float moveInput;
     private float turnInput;
-
-    // We store the original local rotations to avoid gimbal lock or accumulating rotations
-    private Quaternion flOriginalRot;
-    private Quaternion frOriginalRot;
+    private bool brakeInput;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        // Make it behave like a simple object, not a complex physics vehicle
-        rb.mass = 1000f;
-        rb.linearDamping = 2f; 
-        rb.angularDamping = 2f;
-        rb.centerOfMass = new Vector3(0, -0.5f, 0); // Keep it from flipping easily
+        // Lower center of mass to prevent the car from rolling over easily in corners
+        rb.centerOfMass = new Vector3(0, -0.2f, 0);
 
-        if (frontLeftWheel != null) flOriginalRot = frontLeftWheel.localRotation;
-        if (frontRightWheel != null) frOriginalRot = frontRightWheel.localRotation;
+        // FORCE clear and rebuild to avoid any Unity Editor serialization bugs
+        wheels.Clear();
+        
+        WheelCollider[] colliders = GetComponentsInChildren<WheelCollider>();
+        Transform[] transforms = GetComponentsInChildren<Transform>();
+
+        foreach (var wc in colliders)
+        {
+            string wcName = wc.gameObject.name.ToLower();
+            Transform visual = null;
+            bool isSteering = wcName.Contains("fl") || wcName.Contains("fr");
+            bool isMotor = wcName.Contains("rl") || wcName.Contains("rr");
+
+            // Find the corresponding visual mesh
+            foreach (var t in transforms)
+            {
+                string tname = t.name.ToLower().Replace(" ", "");
+                if ((wcName.Contains("fl") && tname.Contains("frontleftwheel")) ||
+                    (wcName.Contains("fr") && tname.Contains("frontrightwheel")) ||
+                    (wcName.Contains("rl") && tname.Contains("rearleftwheel")) ||
+                    (wcName.Contains("rr") && tname.Contains("rearrightwheel")))
+                {
+                    visual = t;
+                    break;
+                }
+            }
+
+            if (visual != null)
+            {
+                WheelInfo info = new WheelInfo();
+                info.collider = wc;
+                info.visualMesh = visual;
+                info.isSteering = isSteering;
+                info.isMotor = isMotor;
+                wheels.Add(info);
+            }
+        }
+        
+        Debug.Log("SimplePlayerCar: Wheels auto-linked. Count = " + wheels.Count);
     }
 
     void Update()
     {
         moveInput = 0;
         turnInput = 0;
+        brakeInput = false;
 
-        // Try Input System first
+        // Input System Support
         if (Keyboard.current != null)
         {
             if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed) moveInput += 1;
@@ -47,59 +85,66 @@ public class SimplePlayerCar : MonoBehaviour
 
             if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) turnInput -= 1;
             if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) turnInput += 1;
+            
+            if (Keyboard.current.spaceKey.isPressed) brakeInput = true;
         }
         else
         {
-            // Fallback to old input manager just in case
+            // Fallback
             moveInput = Input.GetAxisRaw("Vertical");
             turnInput = Input.GetAxisRaw("Horizontal");
+            brakeInput = Input.GetKey(KeyCode.Space);
         }
 
-        UpdateVisualSteering();
+        UpdateVisuals();
     }
 
     void FixedUpdate()
     {
-        // 1. Move Forward/Backward
-        if (Mathf.Abs(moveInput) > 0.05f)
-        {
-            Vector3 moveForce = transform.forward * moveInput * moveSpeed;
-            rb.AddForce(moveForce, ForceMode.Acceleration);
-        }
-
-        // 2. Turn Left/Right
-        // Only allow turning if the car is actually moving
-        if (rb.linearVelocity.magnitude > 0.5f || Mathf.Abs(moveInput) > 0.05f)
-        {
-            // Reverse steering direction when going backwards
-            float turnMultiplier = moveInput >= 0 ? 1f : -1f;
-            float rotationAmount = turnInput * turnSpeed * turnMultiplier * Time.fixedDeltaTime;
-            
-            Quaternion turnRotation = Quaternion.Euler(0, rotationAmount, 0);
-            rb.MoveRotation(rb.rotation * turnRotation);
-        }
-
-        // 3. Fake Grip (Stop sideways sliding)
-        Vector3 localVelocity = transform.InverseTransformDirection(rb.linearVelocity);
-        localVelocity.x *= 0.1f; // Kill 90% of sideways velocity
-        rb.linearVelocity = transform.TransformDirection(localVelocity);
+        float currentTorque = moveInput * motorTorque;
+        float currentSteer = turnInput * maxSteerAngle;
         
-        // 4. Downforce (Keep it on the ground)
-        rb.AddForce(Vector3.down * 50f, ForceMode.Force);
+        foreach (var wheel in wheels)
+        {
+            if (wheel.collider == null) continue;
+
+            // Apply Steering
+            if (wheel.isSteering)
+            {
+                wheel.collider.steerAngle = currentSteer;
+            }
+
+            // Apply Motor
+            if (wheel.isMotor)
+            {
+                wheel.collider.motorTorque = currentTorque;
+            }
+
+            // Apply Brakes
+            if (brakeInput)
+            {
+                wheel.collider.brakeTorque = brakeTorque;
+                wheel.collider.motorTorque = 0;
+            }
+            else
+            {
+                wheel.collider.brakeTorque = 0;
+            }
+        }
     }
 
-    void UpdateVisualSteering()
+    void UpdateVisuals()
     {
-        float targetSteerAngle = turnInput * maxVisualSteerAngle;
-
-        if (frontLeftWheel != null)
+        foreach (var wheel in wheels)
         {
-            frontLeftWheel.localRotation = flOriginalRot * Quaternion.Euler(0, targetSteerAngle, 0);
-        }
-
-        if (frontRightWheel != null)
-        {
-            frontRightWheel.localRotation = frOriginalRot * Quaternion.Euler(0, targetSteerAngle, 0);
+            if (wheel.collider != null && wheel.visualMesh != null)
+            {
+                Vector3 pos;
+                Quaternion rot;
+                wheel.collider.GetWorldPose(out pos, out rot);
+                wheel.visualMesh.position = pos;
+                wheel.visualMesh.rotation = rot;
+            }
         }
     }
 }

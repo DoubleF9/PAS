@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using System.Collections.Generic;
 
 [InitializeOnLoad]
 public class AutoSetupScene
@@ -17,10 +18,10 @@ public class AutoSetupScene
 
     public static void RunSetup(bool force)
     {
-        if (!force && EditorPrefs.GetBool("CarSetupDone_v4", false)) return;
+        if (!force && EditorPrefs.GetBool("CarSetupDone_v5", false)) return;
         if (EditorApplication.isPlayingOrWillChangePlaymode) return;
 
-        Debug.Log("Antigravity: Running Simple Setup...");
+        Debug.Log("RealPhysics: Running Advanced WheelCollider Setup...");
 
         // 1. Ground Setup
         GameObject ground = GameObject.Find("Ground");
@@ -49,7 +50,7 @@ public class AutoSetupScene
                 string path = AssetDatabase.GUIDToAssetPath(guids[0]);
                 GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
                 car = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
-                car.transform.position = new Vector3(0, 0.5f, 0); 
+                car.transform.position = new Vector3(0, 1.5f, 0); // Drop from slightly higher
                 car.AddComponent<SimplePlayerCar>();
             }
         }
@@ -57,8 +58,7 @@ public class AutoSetupScene
         if (car != null)
         {
             FixMaterials(car);
-            SetupCarScript(car);
-            SetupPhysics(car);
+            SetupAdvancedPhysics(car);
         }
 
         // 3. Camera Setup
@@ -74,31 +74,8 @@ public class AutoSetupScene
         if (follow == null) follow = mainCam.gameObject.AddComponent<CameraFollow>();
         if (car != null) follow.target = car.transform;
 
-        EditorPrefs.SetBool("CarSetupDone_v4", true);
-        Debug.Log("Antigravity: Simple Setup Complete.");
-    }
-
-    private static void SetupCarScript(GameObject car)
-    {
-        SimplePlayerCar script = car.GetComponent<SimplePlayerCar>();
-        if (script == null) return;
-
-        Transform[] allTransforms = car.GetComponentsInChildren<Transform>(true);
-        
-        foreach (var t in allTransforms)
-        {
-            // The model's wheels are usually named "FrontLeftWheel" and "FrontRightWheel"
-            string name = t.name.Replace(" ", "").ToLower();
-            
-            if (name.Contains("frontleftwheel") || (name.Contains("frontleft") && name.Contains("wheel")))
-            {
-                script.frontLeftWheel = t;
-            }
-            else if (name.Contains("frontrightwheel") || (name.Contains("frontright") && name.Contains("wheel")))
-            {
-                script.frontRightWheel = t;
-            }
-        }
+        EditorPrefs.SetBool("CarSetupDone_v5", true);
+        Debug.Log("RealPhysics: Advanced Setup Complete.");
     }
 
     private static void SetupGroundGrid(GameObject ground)
@@ -166,61 +143,100 @@ public class AutoSetupScene
         }
     }
 
-    private static void SetupPhysics(GameObject car)
+    private static void SetupAdvancedPhysics(GameObject car)
     {
-        // 1. Remove all old/extra scripts and Rigidbodies on children (this causes the body to fall off the wheels!)
-        // Destroy SimplePlayerCar on children first, because it RequireComponent(typeof(Rigidbody))
+        // 1. Clean rigidbodies and scripts from children
         SimplePlayerCar[] childScripts = car.GetComponentsInChildren<SimplePlayerCar>(true);
-        foreach (var s in childScripts)
-        {
-            if (s.gameObject != car) Object.DestroyImmediate(s);
-        }
+        foreach (var s in childScripts) { if (s.gameObject != car) Object.DestroyImmediate(s); }
 
         Rigidbody[] childRbs = car.GetComponentsInChildren<Rigidbody>(true);
-        foreach (var r in childRbs)
-        {
-            if (r.gameObject != car) Object.DestroyImmediate(r);
-        }
+        foreach (var r in childRbs) { if (r.gameObject != car) Object.DestroyImmediate(r); }
 
-        // 2. Add Rigidbody to the ROOT if missing
+        // 2. Setup Root Rigidbody
         Rigidbody rb = car.GetComponent<Rigidbody>();
         if (rb == null) rb = car.AddComponent<Rigidbody>();
+        rb.mass = 1500f; // Realistic mass for WheelColliders
+        rb.linearDamping = 0.05f;
+        rb.angularDamping = 0.05f;
 
-        // 3. Remove old setup junk (WheelColliders)
-        WheelCollider[] wheels = car.GetComponentsInChildren<WheelCollider>(true);
-        foreach (var w in wheels)
-        {
-            Object.DestroyImmediate(w);
-        }
+        // 3. Remove old built-in WheelColliders that cause falling through floor
+        WheelCollider[] oldWheels = car.GetComponentsInChildren<WheelCollider>(true);
+        foreach (var w in oldWheels) { Object.DestroyImmediate(w); }
 
-        // 4. Disable ALL child colliders so they don't cause Rigidbody issues
+        // 4. Disable child colliders (visual meshes should not have colliders overlapping WheelColliders)
         Collider[] allColliders = car.GetComponentsInChildren<Collider>(true);
         foreach (var c in allColliders)
         {
             if (c.gameObject != car) c.enabled = false;
         }
 
-        // 5. Add ONE solid BoxCollider to the root that covers EVERYTHING (including wheels)
+        // 5. Add a BoxCollider for the CAR BODY ONLY (elevated so wheels hit ground first)
         BoxCollider rootBox = car.GetComponent<BoxCollider>();
         if (rootBox == null) rootBox = car.AddComponent<BoxCollider>();
+        
+        // Approximate body bounds, kept above ground
+        rootBox.center = new Vector3(0, 0.6f, 0); 
+        rootBox.size = new Vector3(1.8f, 0.8f, 4.5f);
 
-        Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
-        Renderer[] renderers = car.GetComponentsInChildren<Renderer>();
-        bool first = true;
-        foreach (var r in renderers)
+        // 6. Find Visual Wheels
+        Transform fl = null, fr = null, rl = null, rr = null;
+        Transform[] allTransforms = car.GetComponentsInChildren<Transform>(true);
+        foreach (var t in allTransforms)
         {
-            if (first) { bounds = r.bounds; first = false; }
-            else bounds.Encapsulate(r.bounds);
+            string name = t.name.ToLower().Replace(" ", "");
+            if (name.Contains("frontleftwheel")) fl = t;
+            else if (name.Contains("frontrightwheel")) fr = t;
+            else if (name.Contains("rearleftwheel")) rl = t;
+            else if (name.Contains("rearrightwheel")) rr = t;
         }
 
-        if (!first)
+        // 7. Create Dedicated WheelCollider GameObjects
+        Transform wcRoot = car.transform.Find("WheelColliders");
+        if (wcRoot != null) Object.DestroyImmediate(wcRoot.gameObject);
+        
+        wcRoot = new GameObject("WheelColliders").transform;
+        wcRoot.SetParent(car.transform, false);
+        wcRoot.localPosition = Vector3.zero;
+        wcRoot.localRotation = Quaternion.identity;
+
+        SimplePlayerCar script = car.GetComponent<SimplePlayerCar>();
+        if (script != null)
         {
-            rootBox.center = car.transform.InverseTransformPoint(bounds.center);
-            rootBox.size = car.transform.InverseTransformVector(bounds.size);
-            
-            // Shift the center slightly up so the bottom of the box aligns with the wheels perfectly, 
-            // without sinking into the ground.
-            rootBox.center = new Vector3(rootBox.center.x, rootBox.center.y + 0.02f, rootBox.center.z);
+            script.wheels.Clear();
+            if (fl != null) script.wheels.Add(CreateWheel(wcRoot, fl, "FL", true, false));
+            if (fr != null) script.wheels.Add(CreateWheel(wcRoot, fr, "FR", true, false));
+            if (rl != null) script.wheels.Add(CreateWheel(wcRoot, rl, "RL", false, true));
+            if (rr != null) script.wheels.Add(CreateWheel(wcRoot, rr, "RR", false, true));
         }
+    }
+
+    private static WheelInfo CreateWheel(Transform root, Transform visual, string name, bool steer, bool motor)
+    {
+        GameObject wcObj = new GameObject("WC_" + name);
+        wcObj.transform.SetParent(root, false);
+        
+        // Match visual wheel position exactly
+        wcObj.transform.position = visual.position;
+        // Keep rotation neutral relative to car
+        wcObj.transform.localRotation = Quaternion.identity;
+
+        WheelCollider wc = wcObj.AddComponent<WheelCollider>();
+        wc.radius = 0.33f; 
+        wc.suspensionDistance = 0.2f;
+        wc.mass = 20f;
+        
+        JointSpring suspension = wc.suspensionSpring;
+        suspension.spring = 35000f;
+        suspension.damper = 4500f;
+        suspension.targetPosition = 0.5f;
+        wc.suspensionSpring = suspension;
+
+        WheelInfo info = new WheelInfo();
+        info.collider = wc;
+        info.visualMesh = visual;
+        info.isSteering = steer;
+        info.isMotor = motor;
+        
+        return info;
     }
 }
