@@ -59,6 +59,10 @@ public class SimplePlayerCar : MonoBehaviour
     private float wallAlignTimer = 0f;
     private Quaternion targetWallRotation;
 
+    [Header("Lap")]
+    public int maxLaps;
+    public int currentLap;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -110,6 +114,8 @@ public class SimplePlayerCar : MonoBehaviour
         }
         
         Debug.Log("SimplePlayerCar: Wheels auto-linked. Count = " + wheels.Count);
+
+        maxLaps=FindObjectOfType<LapSystem>().maxLaps;
     }
 
     void Update()
@@ -381,5 +387,11 @@ public class SimplePlayerCar : MonoBehaviour
                 wallAlignTimer = 0f;
             }
         }
+    }
+
+    public void IncreaseLap()
+    {
+        currentLap++;
+        Debug.Log("Car "+ gameObject.name + " Lap: " + currentLap);
     }
 }

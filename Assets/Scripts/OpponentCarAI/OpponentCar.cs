@@ -22,11 +22,16 @@ public class OpponentCar : MonoBehaviour
     public float respawnTimer=0f;
     public float respawnTimeThreshold=10f;
 
+    [Header("Lap")]
+    public int maxLaps;
+    public int currentLap;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         rb=GetComponent<Rigidbody>();
         rb.useGravity=true;
+        maxLaps=FindObjectOfType<LapSystem>().maxLaps;
+        //currentLap=FindObjectOfType<LapSystem>().currentLap;
     }
 
     void Update()
@@ -115,4 +120,9 @@ public class OpponentCar : MonoBehaviour
         acceleration = Random.Range(3.5f, 5f);
     }
 
+    public void IncreaseLap()
+    {
+        currentLap++;
+        Debug.Log("Car "+ gameObject.name + " Lap: " + currentLap);
+    }
 }
