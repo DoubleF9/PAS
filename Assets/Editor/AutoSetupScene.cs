@@ -5,6 +5,8 @@ using System.Collections.Generic;
 [InitializeOnLoad]
 public class AutoSetupScene
 {
+    private static readonly string[] excludedScenes = { "complete_track_demo" };
+
     static AutoSetupScene()
     {
         EditorApplication.delayCall += () => RunSetup(false);
@@ -20,6 +22,9 @@ public class AutoSetupScene
     {
         if (!force && EditorPrefs.GetBool("CarSetupDone_v5", false)) return;
         if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+
+        string activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        foreach (var s in excludedScenes) if (s == activeScene) return;
 
         Debug.Log("RealPhysics: Running Advanced WheelCollider Setup...");
 

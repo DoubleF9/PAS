@@ -4,6 +4,8 @@ using UnityEngine;
 [InitializeOnLoad]
 public class AutoSpawnRoad
 {
+    private static readonly string[] excludedScenes = { "complete_track_demo" };
+
     static AutoSpawnRoad()
     {
         EditorApplication.delayCall += SpawnRoadAutomatically;
@@ -18,7 +20,10 @@ public class AutoSpawnRoad
     public static void SpawnRoadAutomatically()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) return;
-        
+
+        string activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        foreach (var s in excludedScenes) if (s == activeScene) return;
+
         if (GameObject.Find("Connected Octagon Track") != null) return;
         
         // Remove old tracks if they exist

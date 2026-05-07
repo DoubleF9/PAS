@@ -12,6 +12,7 @@ public class OpponentCar : MonoBehaviour
 
     [Header("Destination Var")]
     public Vector3 destination;
+    public Vector3 destinationForward = Vector3.forward;
     public bool destinationReached;
 
 
@@ -75,16 +76,36 @@ public class OpponentCar : MonoBehaviour
     {
         respawnTimer = 0f;
         currentSpeed = 0f;
-        transform.position = destination;
-        // transform.rotation = Quaternion.Euler(0f, -90f, 0f);
-        // rb.linearVelocity = Vector3.zero;
-        // rb.angularVelocity = Vector3.zero;
+
+        Vector3 spawnPos = destination;
+        Vector3 rayOrigin = destination + Vector3.up * 50f;
+        if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, 200f, ~0, QueryTriggerInteraction.Ignore))
+        {
+            spawnPos = hit.point + Vector3.up * 0.5f;
+        }
+
+        transform.position = spawnPos;
+        Vector3 flatForward = destinationForward;
+        flatForward.y = 0f;
+        if (flatForward.sqrMagnitude > 0.0001f)
+        {
+            transform.rotation = Quaternion.LookRotation(flatForward.normalized);
+        }
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
         destinationReached = false;
     }
 
     public void LocateDestination(Vector3 newDestination)
     {
         destination = newDestination;
+        destinationReached = false;
+    }
+
+    public void LocateDestination(Vector3 newDestination, Vector3 forwardHint)
+    {
+        destination = newDestination;
+        destinationForward = forwardHint;
         destinationReached = false;
     }
 
