@@ -1,0 +1,102 @@
+% This must be in the first 5 lines to tell arXiv to use pdfLaTeX, which is strongly recommended.
+\pdfoutput=1
+% In particular, the hyperref package requires pdfLaTeX in order to break URLs across lines.
+\documentclass[11pt]{article}
+\usepackage{ACL2023}
+
+\usepackage{hyperref}
+
+% Standard package includes
+\usepackage{times}
+\usepackage{latexsym}
+
+% For proper rendering and hyphenation of words containing Latin characters (including in bib files)
+\usepackage[T1]{fontenc}
+
+% This assumes your files are encoded as UTF8
+\usepackage[utf8]{inputenc}
+
+% This is not strictly necessary, and may be commented out.
+% However, it will improve the layout of the manuscript,
+% and will typically save some space.
+\usepackage{microtype}
+
+% This is also not strictly necessary, and may be commented out.
+% However, it will improve the aesthetics of text in
+% the typewriter font.
+\usepackage{inconsolata}
+
+% Additional packages for code listings and graphics
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{xcolor}
+
+% Code listing style
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue}\bfseries,
+  commentstyle=\color{gray},
+  stringstyle=\color{red},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  breaklines=true,
+  frame=single,
+  language=[Sharp]C,
+  tabsize=2
+}
+
+\title{Simulare de Curse Auto 3D în Unity: Fizică Realistă a Vehiculelor și Inteligență Artificială pentru Oponenți}
+
+\author{
+Vasile Daria-Gabriela \\
+\texttt{\scriptsize daria-gabriela.vasile@s.unibuc.ro}
+\And
+Turcu Filip-Ianis \\
+\texttt{\scriptsize filip-ianis.turcu@s.unibuc.ro}
+\And
+Borozan George \\
+\texttt{\scriptsize george.borozan@s.unibuc.ro}
+\AND
+Pitica Nicola \\
+\texttt{\scriptsize nicola.pitica@s.unibuc.ro}
+\And
+Gheorghieș Petruț-Rareș \\
+\texttt{\scriptsize petrut-rares.gheorghies@s.unibuc.ro}
+\And
+Voicu Ioan-Vladut \\
+\texttt{\scriptsize vvlad424@gmail.com}
+\AND
+Popescu Tiberiu-Andrei \\
+\texttt{\scriptsize tiberiu-andrei.popescu@s.unibuc.ro}
+}
+
+\begin{document}
+\maketitle
+
+
+\input{sections/abstract}
+\input{sections/introduction}
+\input{sections/related_work}
+\input{sections/methodology}
+\input{sections/results}
+\input{sections/future_work}
+\input{sections/conclusion}
+\input{sections/limitations}
+
+\bibliography{references}
+\bibliographystyle{acl_natbib}
+
+\appendix
+
+\section{Fragmente de Cod Suplimentare}
+\label{sec:appendix}
+
+\subsection{Configurarea Fizicii Avansate}
+Funcția \texttt{SetupAdvancedPhysics} din scriptul \texttt{AutoSetupScene} configurează automat componentele fizice ale vehiculului, inclusiv masa Rigidbody-ului (1500 kg), parametrii suspensiei (spring = 35000, damper = 4500), raza roților (0.33 m) și coliderul de tip BoxCollider pentru caroseria mașinii.
+
+\subsection{Sistem de Waypoint-uri -- Vizualizare Editor}
+Scriptul \texttt{WaypointEditor} utilizează API-ul Gizmos din Unity pentru a desena conexiunile dintre waypoint-uri direct în Scene View, facilitând configurarea traseelor AI. Liniile verzi indică conexiunea către waypoint-ul următor, iar cele roșii către cel anterior.
+
+\end{document}

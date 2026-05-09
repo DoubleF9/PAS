@@ -1,0 +1,18 @@
+\section{Introducere}
+\label{sec:introduction}
+
+Jocurile de curse auto reprezintă unul dintre cele mai populare genuri din industria jocurilor video, combinând elemente de fizică, grafică 3D și inteligență artificială într-o experiență interactivă complexă \cite{rabin2009introduction}. Simularea realistă a dinamicii vehiculelor constituie o provocare inginerească semnificativă, deoarece necesită modelarea interacțiunii dintre roți, suspensie, motor și suprafața drumului \cite{pacejka2012tire}.
+
+Proiectul prezentat în această lucrare constă în dezvoltarea unui joc de curse auto 3D utilizând motorul Unity (versiunea 6000.4.2f1), cu scopul de a demonstra aplicarea practică a conceptelor din domeniul Proiectării Avansate a Sistemelor (PAS). Obiectivele principale ale proiectului sunt:
+
+\begin{itemize}
+    \item \textbf{Fizica vehiculului jucătorului:} Implementarea unui model de conducere realist bazat pe componenta \texttt{WheelCollider} din Unity, cu suport pentru tracțiune integrală, frânare, coasting (rulare liberă), control al tracțiunii și asistență la aderență laterală.
+    
+    \item \textbf{Inteligența artificială a oponenților:} Proiectarea unui sistem de navigare bazat pe waypoint-uri (puncte de referință), care permite vehiculelor controlate de calculator să parcurgă autonom traseul de curse, cu adaptare dinamică a vitezei.
+    
+    \item \textbf{Generarea procedurală a traseului:} Construcția algoritmică a unui circuit de curse în formă de octogon regulat, complet cu segmente de drum, pereți interiori și exteriori, și texturi procedurale.
+    
+    \item \textbf{Sisteme de joc:} Implementarea sistemelor auxiliare precum numărătoarea inversă la start, contorizarea tururilor, meniul de pauză și ecranul de sfârșit al cursei.
+\end{itemize}
+
+Lucrarea este organizată după cum urmează: Secțiunea~\ref{sec:related_work} prezintă lucrări conexe, Secțiunea~\ref{sec:methodology} detaliază arhitectura și implementarea, Secțiunea~\ref{sec:results} prezintă rezultatele obținute, iar Secțiunile~\ref{sec:future_work} și~\ref{sec:conclusion} discută direcții viitoare și concluzii.

@@ -1,0 +1,20 @@
+\section{Lucrări Conexe}
+\label{sec:related_work}
+
+\subsection{Simularea Fizicii Vehiculelor}
+
+Modelarea dinamicii vehiculelor în jocurile video a fost un subiect de cercetare activ de-a lungul deceniilor. Modelul Pacejka (cunoscut și sub denumirea de ``Magic Formula'') \cite{pacejka2012tire} oferă o aproximare matematică a forțelor generate de anvelope în funcție de alunecare, fiind utilizat extensiv în simulatoarele de curse profesionale. Unity oferă componenta \texttt{WheelCollider}, care implementează un model simplificat de suspensie și fricțiune bazat pe curbe configurabile de aderență (stiffness), permițând un compromis între realism și performanță \cite{unity_manual_wheelcollider}.
+
+Abordarea noastră extinde funcționalitatea de bază a \texttt{WheelCollider}-ului prin adăugarea unor sisteme suplimentare: controlul tracțiunii (traction control), asistența la aderența laterală (lateral grip assist), downforce simulat și un model de coasting care înlocuiește frânarea bruscă cu drag aerodinamic gradual.
+
+\subsection{Inteligența Artificială în Jocurile de Curse}
+
+Navigarea vehiculelor AI în jocuri de curse este abordată frecvent prin sisteme bazate pe waypoint-uri \cite{rabin2009introduction}, unde o secvență de puncte de referință definește traseul pe care vehiculul trebuie să îl urmeze. Alternativ, abordări mai avansate utilizează câmpuri de potențial, rețele neuronale sau algoritmi de învățare prin recompensă (reinforcement learning) \cite{julian2019deep}.
+
+Proiectul nostru adoptă abordarea clasică bazată pe waypoint-uri, cu adăugarea unor elemente de variabilitate: fiecare waypoint are o lățime configurabilă, iar poziția țintă este aleasă aleatoriu în cadrul acestei lățimi, ceea ce introduce un comportament mai natural al oponenților.
+
+\subsection{Generarea Procedurală în Jocurile Video}
+
+Generarea procedurală de conținut (PCG -- Procedural Content Generation) \cite{shaker2016procedural} este o tehnică larg utilizată în industria jocurilor video pentru crearea automată a nivelurilor, terenurilor și obiectelor. În contextul jocurilor de curse, PCG poate fi aplicat pentru generarea de trasee, asigurând varietate și rejucabilitate.
+
+Implementarea noastră generează un circuit octogonal prin calcul matematic al pozițiilor segmentelor de drum și al pereților, utilizând relații trigonometrice pentru un octogon regulat.

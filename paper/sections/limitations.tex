@@ -1,0 +1,16 @@
+\section{Limitări}
+\label{sec:limitations}
+
+Proiectul prezintă următoarele limitări:
+
+\begin{itemize}
+    \item \textbf{Fizica AI simplificată:} Vehiculele AI nu utilizează WheelCollider-e pentru locomoție (doar pentru vizualizarea rotației roților), ci controlează direct velocitatea Rigidbody-ului. Aceasta poate duce la comportamente nerealistice la coliziuni între vehicule.
+    
+    \item \textbf{Traseu static:} Deși generat procedural, traseul are o formă fixă (octogon). Nu există variabilitate în topologia circuitului între sesiuni de joc.
+    
+    \item \textbf{Lipsa sistemului de clasament:} Nu există un clasament în timp real care să indice pozițiile relative ale vehiculelor pe parcursul cursei.
+    
+    \item \textbf{Navigare AI limitată:} Oponenții urmează strict waypoint-urile fără comportamente de evitare a obstacolelor sau de depășire a altor vehicule.
+    
+    \item \textbf{Lipsa efectelor vizuale avansate:} Nu sunt implementate particule, urme de anvelope sau efecte sonore specifice (motor, derapaj, coliziune).
+\end{itemize}

@@ -1,0 +1,63 @@
+\section{Rezultate}
+\label{sec:results}
+
+Proiectul a fost testat în Unity 6000.4.2f1, pe un circuit octogonal generat procedural.
+
+\subsection{Evaluarea Fizicii Vehiculului}
+
+Parametrii vehiculului jucătorului și efectele lor sunt sumarizate în Tabelul~\ref{tab:vehicle_params}.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lrl}
+\toprule
+\textbf{Parametru} & \textbf{Valoare} & \textbf{Efect} \\
+\midrule
+Masă vehicul & 1500 kg & Stabilitate \\
+Cuplu maxim motor & 8000 Nm & Accelerare \\
+Viteză maximă & 320 km/h & Limita superioară \\
+Forță de frânare & 15000 Nm & Frânare eficientă \\
+Coeficient downforce & 50 & Aderență la viteză \\
+Asistență laterală & 5 & Anti-derapaj \\
+Fricțiune normală & 3.5 & Grip anvelope \\
+\bottomrule
+\end{tabular}
+\caption{Parametrii fizici ai vehiculului jucătorului.}
+\label{tab:vehicle_params}
+\end{table}
+
+Testele au demonstrat:
+\begin{itemize}
+    \item \textbf{Accelerare progresivă:} Factorul de boost ($2.5\times$) la viteze mici asigură o pornire rapidă.
+    \item \textbf{Stabilitate la viteză mare:} Downforce-ul și asistența laterală elimină oscilațiile.
+    \item \textbf{Controlul tracțiunii:} Limita de 15 km/h previne patinarea roților.
+    \item \textbf{Coasting natural:} Drag-ul aerodinamic oferă decelerare graduală.
+\end{itemize}
+
+\subsection{Evaluarea Inteligenței Artificiale}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Criteriu} & \textbf{Rezultat} \\
+\midrule
+Navigare completă traseu & Da \\
+Evitarea blocajelor (respawn) & Activ (10s) \\
+Variabilitate traiectorie & Aleatorizare pe lățime \\
+Adaptare zone boost/breakers & Funcțională \\
+\bottomrule
+\end{tabular}
+\caption{Evaluarea calitativă a sistemului AI.}
+\label{tab:ai_eval}
+\end{table}
+
+\subsection{Generarea Procedurală}
+
+Circuitul octogonal satisface: geometrie corectă (8 segmente la 45°), delimitare completă cu pereți, texturare procedurală și parametrizare flexibilă (lățime 30m, laturi 100m, pereți 4m).
+
+\subsection{Sistemele de Joc}
+
+Numărătoarea inversă, sistemul de tururi, meniul de pauză și ecranul de final funcționează conform așteptărilor, cu gestionare corectă a \texttt{Time.timeScale} și a cursorului mouse.

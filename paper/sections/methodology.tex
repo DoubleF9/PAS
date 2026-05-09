@@ -1,0 +1,180 @@
+\section{Metodologie și Implementare}
+\label{sec:methodology}
+
+Proiectul este dezvoltat în Unity 6000.4.2f1 utilizând Universal Render Pipeline (URP) și New Input System. Arhitectura software este organizată modular, cu componente separate pentru fizica vehiculului, inteligența artificială, generarea traseului și interfața utilizator.
+
+\subsection{Arhitectura Generală}
+
+Structura proiectului urmează o organizare standard Unity, cu următoarele module principale:
+
+\begin{itemize}
+    \item \textbf{Scripts/} -- conține logica jucătorului (\texttt{SimplePlayerCar}, \texttt{CameraFollow})
+    \item \textbf{Scripts/OpponentCarAI/} -- conține AI-ul oponenților (\texttt{OpponentCar}, \texttt{OpponentCarWaypoints}, \texttt{Waypoint}, \texttt{BoostPad}, \texttt{SpeedBreakers})
+    \item \textbf{Scripts/UI/} -- conține sistemele de interfață (\texttt{LapSystem}, \texttt{MissionEndUI}, \texttt{PauseMenu}, \texttt{RaceCountdown})
+    \item \textbf{Scripts/Editor/} -- instrumente pentru editorul Unity (\texttt{WaypointEditor}, \texttt{WaypointManagerWindow})
+    \item \textbf{Editor/} -- scripturi de configurare automată (\texttt{AutoSetupScene}, \texttt{AutoSpawnRoad})
+\end{itemize}
+
+\subsection{Fizica Vehiculului Jucătorului}
+
+Componenta centrală a proiectului este clasa \texttt{SimplePlayerCar}, care implementează un model complet de dinamică a vehiculului. Vehiculul este modelat ca un corp rigid (\texttt{Rigidbody}) cu masă de 1500~kg, echipat cu patru \texttt{WheelCollider}-e care simulează suspensia, fricțiunea și forțele generate de contact cu suprafața drumului.
+
+\subsubsection{Modelul Motorului și Curba de Cuplu}
+
+Cuplul motorului este calculat în funcție de viteza curentă a vehiculului, folosind o curbă adaptivă:
+
+\begin{equation}
+    T_{curve} = 1 - \frac{v_{kmh}}{v_{max}}
+\end{equation}
+
+Pentru viteze mici ($v < 60$ km/h), se aplică un factor de boost pentru accelerare rapidă:
+
+\begin{equation}
+    T_{curve}^{*} = \text{lerp}\left(2.5, T_{curve}, \frac{v_{kmh}}{60}\right)
+\end{equation}
+
+Cuplul efectiv per roată motrică se calculează ca:
+
+\begin{equation}
+    T_{wheel} = \frac{I_{move} \cdot T_{max} \cdot T_{curve}^{*}}{N_{motor}}
+\end{equation}
+
+unde $I_{move}$ este inputul jucătorului ($[-1, 1]$), $T_{max} = 8000$~Nm este cuplul maxim, iar $N_{motor} = 4$ (în modul AWD) sau $2$.
+
+\subsubsection{Controlul Tracțiunii}
+
+Sistemul de control al tracțiunii previne patinarea roților prin monitorizarea diferenței dintre viteza perifericii a roții și viteza vehiculului:
+
+\begin{equation}
+    v_{wheel} = |RPM \cdot r \cdot 2\pi \cdot 60 / 1000|
+\end{equation}
+
+Dacă $v_{wheel} > v_{vehicle} + \Delta_{slip}$ (unde $\Delta_{slip} = 15$ km/h), cuplul motorului pentru acea roată este setat la zero.
+
+\subsubsection{Downforce și Asistență Laterală}
+
+Downforce-ul simulat crește aderența la viteze mari prin aplicarea unei forțe orientate în jos, proporțională cu viteza:
+
+\begin{equation}
+    \vec{F}_{down} = -\hat{u}_{car} \cdot k_{down} \cdot |\vec{v}|
+\end{equation}
+
+unde $k_{down} = 50$ este coeficientul de downforce. Asistența la aderența laterală contracarează alunecarea laterală:
+
+\begin{equation}
+    \vec{F}_{grip} = -\hat{r}_{car} \cdot v_{lateral} \cdot m \cdot k_{grip}
+\end{equation}
+
+unde $k_{grip} = 5$ și $v_{lateral} = \vec{v} \cdot \hat{r}_{car}$.
+
+\subsubsection{Direcția Adaptivă}
+
+Unghiul maxim de virare scade progresiv cu viteza pentru a menține stabilitatea:
+
+\begin{equation}
+    \alpha_{max} = \text{lerp}\left(\alpha_{high}, \alpha_{low}, \frac{v_{kmh}}{v_{dropoff}}\right)
+\end{equation}
+
+cu $\alpha_{high} = 30°$, $\alpha_{low} = 8°$ și $v_{dropoff} = 120$ km/h. Trecerea la unghiul dorit se realizează prin interpolare liniară cu un factor de netezire.
+
+\subsubsection{Coliziunea cu Pereții}
+
+Sistemul de gestionare a coliziunilor cu pereții (\texttt{OnCollisionEnter}) calculează unghiul de impact folosind normala de contact proiectată pe planul orizontal. Dacă unghiul este sub un prag configurat ($30°$), vehiculul alunecă de-a lungul peretelui cu o penalizare de viteză proporțională cu unghiul:
+
+\begin{equation}
+    s_{mult} = \text{lerp}\left(s_{base}, 0, \frac{\theta_{impact}}{\theta_{threshold}}\right)
+\end{equation}
+
+\subsection{Inteligența Artificială a Oponenților}
+
+\subsubsection{Navigarea Bazată pe Waypoint-uri}
+
+Sistemul AI este compus din trei componente principale:
+
+\begin{enumerate}
+    \item \textbf{Waypoint} -- definește un punct de referință pe traseu, cu legături către waypoint-urile precedent și următor (listă dublu înlănțuită). Fiecare waypoint are o lățime configurabilă ($[0, 5]$ metri), iar poziția efectivă returnată este aleatorizată pe lățimea waypoint-ului:
+    
+    \begin{equation}
+        \vec{p} = \text{lerp}(\vec{p}_{min}, \vec{p}_{max}, r), \quad r \sim U(0, 1)
+    \end{equation}
+    
+    \item \textbf{OpponentCarWaypoints} -- controlează navigarea, actualizând destinația vehiculului AI atunci când waypoint-ul curent este atins.
+    
+    \item \textbf{OpponentCar} -- implementează locomoția efectivă prin rotirea progresivă spre destinație și ajustarea vitezei.
+\end{enumerate}
+
+\subsubsection{Locomoția Vehiculului AI}
+
+Vehiculul AI se rotește progresiv spre destinație folosind \texttt{Quaternion.RotateTowards}:
+
+\begin{equation}
+    q_{new} = \text{RotateTowards}(q_{current}, q_{target}, \omega \cdot \Delta t)
+\end{equation}
+
+cu $\omega = 30°$/s. Viteza este ajustată prin accelerare liniară:
+
+\begin{equation}
+    v_{new} = \text{MoveTowards}(v_{current}, v_{max}, a \cdot \Delta t)
+\end{equation}
+
+Velocitatea finală este interpolată lin pentru a evita discontinuitățile care ar putea destabiliza fizica:
+
+\begin{equation}
+    \vec{v}_{rb} = \text{lerp}(\vec{v}_{rb}, \vec{v}_{target}, 10 \cdot \Delta t)
+\end{equation}
+
+\subsubsection{Zone de Boost și Încetinire}
+
+Traseul conține zone speciale implementate ca trigger-e:
+
+\begin{itemize}
+    \item \textbf{BoostPad:} Crește accelerația ($[4, 5]$) și viteza curentă ($[35, 41]$ unități) la intrarea în zonă.
+    \item \textbf{SpeedBreakers:} Reduce accelerația ($[0.5, 1]$) și viteza ($[25, 28]$ unități) temporar, cu revenire la normal după o durată configurabilă (implicit 3 secunde) prin corutină.
+\end{itemize}
+
+\subsubsection{Sistemul de Respawn}
+
+Vehiculul AI dispune de un mecanism de respawn care se activează când rămâne blocat (viteză $< 2$ unități/s) pentru mai mult de 10 secunde. La respawn, vehiculul este teleportat la destinația curentă, cu orientarea calculată pe baza direcției waypoint-ului următor.
+
+\subsection{Generarea Procedurală a Traseului}
+
+Clasa \texttt{AutoSpawnRoad} generează automat un circuit octogonal. Algoritmul calculează:
+
+\begin{enumerate}
+    \item Raza octogonului intern folosind relația trigonometrică:
+    \begin{equation}
+        R = \frac{L / 2}{\tan(22.5°)}
+    \end{equation}
+    unde $L = 100$ este lungimea unei laturi.
+    
+    \item Razele exterioare și interioare:
+    \begin{equation}
+        R_{ext} = R + w/2 + 0.5, \quad R_{int} = R - w/2 - 0.5
+    \end{equation}
+    unde $w = 30$ este lățimea pistei.
+    
+    \item Lungimea pereților pentru a forma un octogon perfect:
+    \begin{equation}
+        L_{perete} = 2 \cdot R_{perete} \cdot \tan(22.5°) + 2
+    \end{equation}
+    
+    \item Pentru fiecare din cele 8 segmente, se generează un segment de drum, un perete exterior și un perete interior, poziționate la unghiuri de $i \cdot 45°$.
+\end{enumerate}
+
+\subsection{Sistemul Camerei}
+
+Componenta \texttt{CameraFollow} implementează o cameră de tip third-person orbitală. Camera urmărește vehiculul jucătorului cu un offset configurabil (distanță = 6 m, înălțime = 1.5 m) și permite controlul prin mouse cu sensibilitate ajustabilă. Poziția este netezită prin interpolare liniară (\texttt{Vector3.Lerp}).
+
+\subsection{Interfața Utilizator}
+
+\subsubsection{Numărătoarea Inversă}
+
+Componenta \texttt{RaceCountdown} implementează un cronometru de pornire (3-2-1-GO!) folosind corutine. Pe durata numărătorii, \texttt{Time.timeScale} este setat la 0, oprind efectiv simularea fizicii.
+
+\subsubsection{Sistemul de Tururi}
+
+Clasa \texttt{LapSystem} utilizează un trigger collider plasat pe linia de start/finish pentru a detecta trecerea vehiculelor. La completarea unui tur, se verifică dacă cursa s-a încheiat (număr maxim de tururi atins).
+
+\subsubsection{Meniul de Pauză și Ecranul de Final}
+
+\texttt{PauseMenu} permite oprirea/reluarea jocului (Escape), restart și întoarcerea la meniul principal. \texttt{MissionEndUI} afișează rezultatul cursei (câștig/pierdere) și oferă opțiunea de întoarcere la meniul principal.
