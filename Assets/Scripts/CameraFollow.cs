@@ -18,7 +18,7 @@ public class CameraFollow : MonoBehaviour
         currentX = angles.y;
         currentY = angles.x;
 
-        // Hide cursor for better control
+        // Lock and hide the cursor so mouse delta drives the orbital camera
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
@@ -46,7 +46,7 @@ public class CameraFollow : MonoBehaviour
         currentY = Mathf.Clamp(currentY, -5f, 60f); // Limit up/down pitch
 
         Quaternion rotation = Quaternion.Euler(currentY, currentX, 0);
-        // Look slightly ahead of the car rather than exactly at its center
+        // Aim slightly above the car's pivot so the view sits over the roof, not the wheels
         Vector3 lookTarget = target.position + new Vector3(0, height, 0);
         Vector3 position = lookTarget - (rotation * Vector3.forward * distance);
 
