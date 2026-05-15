@@ -13,8 +13,8 @@ Navigarea vehiculelor AI în jocuri de curse este abordată frecvent prin sistem
 
 Proiectul nostru adoptă abordarea clasică bazată pe waypoint-uri, cu adăugarea unor elemente de variabilitate: fiecare waypoint are o lățime configurabilă, iar poziția țintă este aleasă aleatoriu în cadrul acestei lățimi, ceea ce introduce un comportament mai natural al oponenților.
 
-\subsection{Generarea Procedurală în Jocurile Video}
+\subsection{Definirea Traseelor prin Waypoint-uri}
 
-Generarea procedurală de conținut (PCG -- Procedural Content Generation) \cite{shaker2016procedural} este o tehnică larg utilizată în industria jocurilor video pentru crearea automată a nivelurilor, terenurilor și obiectelor. În contextul jocurilor de curse, PCG poate fi aplicat pentru generarea de trasee, asigurând varietate și rejucabilitate.
+Definirea traseelor de curse în jocuri video se poate realiza prin mai multe abordări: modelare manuală a geometriei, generare procedurală \cite{shaker2016procedural} sau utilizarea unor sisteme de puncte de referință (waypoint-uri) care descriu axul traseului. Sistemele bazate pe waypoint-uri oferă un control fin asupra formei circuitului și permit reutilizarea acelorași date atât pentru construcția vizuală a traseului, cât și pentru navigarea agenților AI \cite{rabin2009introduction}.
 
-Implementarea noastră generează un circuit octogonal prin calcul matematic al pozițiilor segmentelor de drum și al pereților, utilizând relații trigonometrice pentru un octogon regulat.
+Implementarea noastră utilizează un sistem unificat de waypoint-uri, configurate manual în editorul Unity, care definesc forma traseului și servesc simultan ca repere pentru navigarea vehiculelor AI.

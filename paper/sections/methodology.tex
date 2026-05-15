@@ -1,7 +1,7 @@
 \section{Metodologie și Implementare}
 \label{sec:methodology}
 
-Proiectul este dezvoltat în Unity 6000.4.2f1 utilizând Universal Render Pipeline (URP) și New Input System. Arhitectura software este organizată modular, cu componente separate pentru fizica vehiculului, inteligența artificială, generarea traseului și interfața utilizator.
+Proiectul este dezvoltat în Unity 6000.4.2f1 utilizând Universal Render Pipeline (URP) și New Input System. Arhitectura software este organizată modular, cu componente separate pentru fizica vehiculului, inteligența artificială, definirea traseului prin waypoint-uri și interfața utilizator.
 
 \subsection{Arhitectura Generală}
 
@@ -12,7 +12,7 @@ Structura proiectului urmează o organizare standard Unity, cu următoarele modu
     \item \textbf{Scripts/OpponentCarAI/} -- conține AI-ul oponenților (\texttt{OpponentCar}, \texttt{OpponentCarWaypoints}, \texttt{Waypoint}, \texttt{BoostPad}, \texttt{SpeedBreakers})
     \item \textbf{Scripts/UI/} -- conține sistemele de interfață (\texttt{LapSystem}, \texttt{MissionEndUI}, \texttt{PauseMenu}, \texttt{RaceCountdown})
     \item \textbf{Scripts/Editor/} -- instrumente pentru editorul Unity (\texttt{WaypointEditor}, \texttt{WaypointManagerWindow})
-    \item \textbf{Editor/} -- scripturi de configurare automată (\texttt{AutoSetupScene}, \texttt{AutoSpawnRoad})
+    \item \textbf{Editor/} -- scripturi de configurare automată (\texttt{AutoSetupScene})
 \end{itemize}
 
 \subsection{Fizica Vehiculului Jucătorului}
@@ -136,30 +136,19 @@ Traseul conține zone speciale implementate ca trigger-e:
 
 Vehiculul AI dispune de un mecanism de respawn care se activează când rămâne blocat (viteză $< 2$ unități/s) pentru mai mult de 10 secunde. La respawn, vehiculul este teleportat la destinația curentă, cu orientarea calculată pe baza direcției waypoint-ului următor.
 
-\subsection{Generarea Procedurală a Traseului}
+\subsection{Definirea Traseului prin Waypoint-uri}
 
-Clasa \texttt{AutoSpawnRoad} generează automat un circuit octogonal. Algoritmul calculează:
+Traseul de curse este construit integral prin sistemul de waypoint-uri descris în secțiunea anterioară. Fiecare waypoint este un \texttt{GameObject} plasat manual în scenă, conectat cu cel precedent și cu cel următor printr-o listă dublu înlănțuită, astfel încât secvența de waypoint-uri descrie axul traseului.
 
-\begin{enumerate}
-    \item Raza octogonului intern folosind relația trigonometrică:
-    \begin{equation}
-        R = \frac{L / 2}{\tan(22.5°)}
-    \end{equation}
-    unde $L = 100$ este lungimea unei laturi.
-    
-    \item Razele exterioare și interioare:
-    \begin{equation}
-        R_{ext} = R + w/2 + 0.5, \quad R_{int} = R - w/2 - 0.5
-    \end{equation}
-    unde $w = 30$ este lățimea pistei.
-    
-    \item Lungimea pereților pentru a forma un octogon perfect:
-    \begin{equation}
-        L_{perete} = 2 \cdot R_{perete} \cdot \tan(22.5°) + 2
-    \end{equation}
-    
-    \item Pentru fiecare din cele 8 segmente, se generează un segment de drum, un perete exterior și un perete interior, poziționate la unghiuri de $i \cdot 45°$.
-\end{enumerate}
+Pentru a facilita editarea, scriptul \texttt{WaypointEditor} desenează în Scene View, prin API-ul Gizmos, conexiunile dintre waypoint-uri (linii verzi către succesor și roșii către predecesor) și lățimea configurată a fiecărui punct. Fereastra de editor \texttt{WaypointManagerWindow} oferă operații de creare, ștergere și reordonare a waypoint-urilor.
+
+Aceeași secvență de waypoint-uri este utilizată simultan pentru două scopuri:
+\begin{itemize}
+    \item ca traiectorie de referință pentru navigarea vehiculelor AI (vezi Secțiunea anterioară);
+    \item ca structură geometrică pentru poziționarea segmentelor de drum și a pereților, plasate manual de-a lungul waypoint-urilor în editorul Unity.
+\end{itemize}
+
+Această abordare unificată evită duplicarea datelor între reprezentarea vizuală a traseului și logica de navigare a AI-ului, asigurând că oponenții urmează exact forma circuitului.
 
 \subsection{Sistemul Camerei}
 

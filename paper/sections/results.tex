@@ -1,7 +1,7 @@
 \section{Rezultate}
 \label{sec:results}
 
-Proiectul a fost testat în Unity 6000.4.2f1, pe un circuit octogonal generat procedural.
+Proiectul a fost testat în Unity 6000.4.2f1, pe un circuit construit prin sistemul de waypoint-uri descris în secțiunea de metodologie.
 
 \subsection{Evaluarea Fizicii Vehiculului}
 
@@ -54,9 +54,9 @@ Adaptare zone boost/breakers & Funcțională \\
 \label{tab:ai_eval}
 \end{table}
 
-\subsection{Generarea Procedurală}
+\subsection{Definirea Traseului prin Waypoint-uri}
 
-Circuitul octogonal satisface: geometrie corectă (8 segmente la 45°), delimitare completă cu pereți, texturare procedurală și parametrizare flexibilă (lățime 30m, laturi 100m, pereți 4m).
+Sistemul de waypoint-uri permite construirea unor trasee de forme arbitrare direct din editorul Unity, cu vizualizare în Scene View a conexiunilor și a lățimii fiecărui punct. Aceeași secvență de waypoint-uri este folosită atât pentru poziționarea segmentelor de drum și a pereților, cât și pentru navigarea AI, eliminând duplicarea datelor între reprezentarea vizuală și logica de navigare.
 
 \subsection{Sistemele de Joc}
 
